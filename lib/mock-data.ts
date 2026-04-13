@@ -2,34 +2,64 @@ import { LinkProfile, ThemePreset } from "@/lib/types";
 
 export const themePresets: ThemePreset[] = [
   {
-    id: "lagoon",
-    name: "Lagos Lagoon",
-    background: "#f7f4ec",
-    card: "#fffdf7",
-    accent: "#0f766e",
-    text: "#0f172a",
-    muted: "#475569",
-    font: "grotesk"
-  },
-  {
-    id: "sunset",
-    name: "Surulere Sunset",
-    background: "#1f1631",
-    card: "#2c1f43",
-    accent: "#f97316",
-    text: "#f8fafc",
-    muted: "#cbd5e1",
+    id: "editorial",
+    name: "Editorial",
+    background: "#faf8f5",
+    card: "#ffffff",
+    accent: "#c45d3e",
+    text: "#1a1a1a",
+    muted: "#6b6b6b",
     font: "serif"
   },
   {
-    id: "market",
-    name: "Market Grid",
-    background: "#fbf7f1",
+    id: "midnight",
+    name: "Midnight",
+    background: "#0d0d0d",
+    card: "#1a1a1a",
+    accent: "#e8c547",
+    text: "#f5f5f5",
+    muted: "#888888",
+    font: "grotesk"
+  },
+  {
+    id: "garden",
+    name: "Garden",
+    background: "#f4f1eb",
     card: "#ffffff",
-    accent: "#a16207",
-    text: "#18181b",
-    muted: "#52525b",
+    accent: "#2d5a47",
+    text: "#1a2e1f",
+    muted: "#5a6b5e",
+    font: "serif"
+  },
+  {
+    id: "digital",
+    name: "Digital",
+    background: "#0f1419",
+    card: "#1a1f26",
+    accent: "#00d4aa",
+    text: "#e7e9ea",
+    muted: "#71767b",
     font: "mono"
+  },
+  {
+    id: "paper",
+    name: "Paper",
+    background: "#f5f2eb",
+    card: "#fffdf7",
+    accent: "#3d3d3d",
+    text: "#1a1a1a",
+    muted: "#6b6b6b",
+    font: "serif"
+  },
+  {
+    id: "sunset",
+    name: "Sunset",
+    background: "#1f1528",
+    card: "#2c1f3d",
+    accent: "#f97316",
+    text: "#fef3e2",
+    muted: "#c4b5a0",
+    font: "serif"
   }
 ];
 
@@ -38,7 +68,7 @@ export const defaultProfile: LinkProfile = {
   displayName: "Adeola Creates",
   bio: "Designer, educator, and storyteller sharing tools, workshops, and new drops.",
   avatar: "AC",
-  themeId: "lagoon",
+  themeId: "editorial",
   views: 248,
   published: true,
   links: [

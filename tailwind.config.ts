@@ -22,11 +22,19 @@ const config: Config = {
         "muted-foreground": "hsl(var(--muted-foreground))"
       },
       boxShadow: {
-        glow: "0 24px 60px rgba(15, 23, 42, 0.18)"
+        glow: "0 24px 60px rgba(15, 23, 42, 0.12)",
+        xl: "0 20px 50px rgba(15, 23, 42, 0.15)",
+        "2xl": "0 25px 60px rgba(15, 23, 42, 0.2)"
       },
       borderRadius: {
-        xl: "1rem",
-        "2xl": "1.5rem"
+        xl: "0.75rem",
+        "2xl": "1.25rem",
+        "3xl": "1.75rem"
+      },
+      fontFamily: {
+        serif: ["Cormorant Garamond", "Georgia", "ui-serif", "serif"],
+        sans: ["DM Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"]
       }
     }
   },
