@@ -1,46 +1,34 @@
 "use client";
 
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowUp,
+  ArrowRight,
   BarChart3,
   CheckCircle2,
   Eye,
   ExternalLink,
-  Link2,
-  MoveDown,
-  MoveUp,
   Paintbrush,
   Plus,
-  Radio,
   Settings,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
   User,
   Layers,
   Home,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Calendar,
-  MousePointerClick,
-  Users,
-  Clock,
   Menu,
   X,
   LogOut,
-  Copy
+  Copy,
+  Sparkles,
+  Link2
 } from "lucide-react";
-import { useEffect, useMemo, useState, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { defaultProfile, themePresets } from "@/lib/mock-data";
-import { loadProfile, saveProfile } from "@/lib/storage";
+import { defaultProfile, themePresets, loadProfile, saveProfile } from "@/lib/supabase-storage";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { LinkItem, LinkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -72,41 +60,194 @@ function fontClass(font: "grotesk" | "serif" | "mono") {
 type NavSection = "overview" | "links" | "theme" | "profile" | "settings";
 type TimeRange = "7d" | "30d" | "90d";
 
-const mockAnalytics = {
-  views: [
-    { date: "Apr 6", value: 12 },
-    { date: "Apr 7", value: 18 },
-    { date: "Apr 8", value: 15 },
-    { date: "Apr 9", value: 24 },
-    { date: "Apr 10", value: 31 },
-    { date: "Apr 11", value: 28 },
-    { date: "Apr 12", value: 42 },
-    { date: "Apr 13", value: 38 }
-  ],
-  clicks: [
-    { label: "Book a Brand Session", value: 86, percentage: 30 },
-    { label: "Watch My Latest Tutorial", value: 139, percentage: 49 },
-    { label: "Join My Weekly Newsletter", value: 57, percentage: 20 }
-  ],
-  devices: [
-    { label: "Mobile", value: 62 },
-    { label: "Desktop", value: 28 },
-    { label: "Tablet", value: 10 }
-  ],
-  referrers: [
-    { label: "Instagram", value: 45 },
-    { label: "Twitter/X", value: 28 },
-    { label: "TikTok", value: 15 },
-    { label: "Direct", value: 12 }
-  ],
-  topCountries: [
-    { label: "United States", value: 42, flag: "🇺🇸" },
-    { label: "Nigeria", value: 18, flag: "🇳🇬" },
-    { label: "United Kingdom", value: 12, flag: "🇬🇧" },
-    { label: "Canada", value: 8, flag: "🇨🇦" },
-    { label: "Germany", value: 5, flag: "🇩🇪" }
-  ]
-};
+function SetupWizard({ 
+  isOpen, 
+  onClose, 
+  profile, 
+  setProfile, 
+  onSave 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  profile: LinkProfile; 
+  setProfile: React.Dispatch<React.SetStateAction<LinkProfile>>;
+  onSave: () => void;
+}) {
+  const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleNext = async () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      setIsSaving(true);
+      await onSave();
+      setTimeout(() => {
+        setIsSaving(false);
+        onClose();
+      }, 300);
+    }
+  };
+
+  const handleSkip = () => {
+    onSave();
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => {}} />
+      <div className="relative w-full max-w-md animate-fade-in-up">
+        <div className="rounded-3xl bg-white p-8 shadow-2xl">
+          <div className="mb-6 flex items-center gap-2">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={cn(
+                  "h-2 flex-1 rounded-full transition-colors",
+                  s <= step ? "bg-[hsl(24_85%_42%)]" : "bg-[hsl(25_10%_45%/0.1)]"
+                )}
+              />
+            ))}
+          </div>
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(24_85%_50%/0.1)]">
+                  <User className="h-7 w-7 text-[hsl(24_85%_42%)]" />
+                </div>
+                <h2 className="font-serif text-2xl font-medium">Welcome! Let's set up your profile</h2>
+                <p className="mt-2 text-sm text-[hsl(25_10%_45%)]">Start by telling us about yourself</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Display Name</label>
+                  <Input
+                    placeholder="Your name"
+                    value={profile.displayName}
+                    onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Username</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[hsl(25_10%_45%)]">@</span>
+                    <Input
+                      placeholder="yourname"
+                      value={profile.username}
+                      onChange={(e) => setProfile({ 
+                        ...profile, 
+                        username: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") 
+                      })}
+                      className="rounded-xl pl-8"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(24_85%_50%/0.1)]">
+                  <Sparkles className="h-7 w-7 text-[hsl(24_85%_42%)]" />
+                </div>
+                <h2 className="font-serif text-2xl font-medium">Add a bio</h2>
+                <p className="mt-2 text-sm text-[hsl(25_10%_45%)]">Tell visitors who you are</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Bio</label>
+                <Textarea
+                  placeholder="A short description about yourself..."
+                  value={profile.bio}
+                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                  rows={3}
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Avatar initials</label>
+                <Input
+                  maxLength={2}
+                  placeholder="AB"
+                  value={profile.avatar}
+                  onChange={(e) => setProfile({ ...profile, avatar: e.target.value.toUpperCase() })}
+                  className="w-24 rounded-xl text-center text-xl font-medium uppercase"
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(24_85%_50%/0.1)]">
+                  <ExternalLink className="h-7 w-7 text-[hsl(24_85%_42%)]" />
+                </div>
+                <h2 className="font-serif text-2xl font-medium">Ready to go!</h2>
+                <p className="mt-2 text-sm text-[hsl(25_10%_45%)]">Add your first link to get started</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Link Title</label>
+                <Input
+                  placeholder="e.g., My Portfolio"
+                  value={profile.links[0]?.title || ""}
+                  onChange={(e) => setProfile({
+                    ...profile,
+                    links: profile.links.length > 0 
+                      ? [{ ...profile.links[0], title: e.target.value }]
+                      : [{ id: crypto.randomUUID(), title: e.target.value, url: "", clicks: 0 }]
+                  })}
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">URL</label>
+                <Input
+                  placeholder="https://yourwebsite.com"
+                  value={profile.links[0]?.url || ""}
+                  onChange={(e) => setProfile({
+                    ...profile,
+                    links: profile.links.length > 0 
+                      ? [{ ...profile.links[0], url: e.target.value }]
+                      : [{ id: crypto.randomUUID(), title: "", url: e.target.value, clicks: 0 }]
+                  })}
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 flex gap-3">
+            <Button
+              variant="outline"
+              onClick={step > 1 ? () => setStep(step - 1) : handleSkip}
+              className="flex-1 rounded-xl"
+            >
+              {step > 1 ? "Back" : "Skip"}
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={isSaving}
+              className="flex-1 rounded-xl bg-[hsl(24_85%_42%)]"
+            >
+              {isSaving ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <span>{step === 3 ? "Finish" : "Next"}</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function StudioShell() {
   const router = useRouter();
@@ -118,24 +259,58 @@ export function StudioShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const auth = localStorage.getItem("linknest_auth");
-    if (!auth) {
-      router.push("/login");
-      return;
-    }
-    setIsAuthenticated(true);
-    const stored = loadProfile();
-    setProfile(stored);
-    setReady(true);
+    const checkAuth = async () => {
+      const demoAuth = localStorage.getItem("linknest_auth");
+      
+      if (!demoAuth && (!isSupabaseConfigured || !supabase)) {
+        router.push("/login");
+        return;
+      }
+
+      if (supabase && isSupabaseConfigured) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          if (demoAuth) {
+            setIsAuthenticated(true);
+            const stored = await loadProfile();
+            setProfile(stored);
+            setReady(true);
+            return;
+          }
+          router.push("/login");
+          return;
+        }
+        setIsAuthenticated(true);
+        const stored = await loadProfile(session.user.id);
+        setProfile(stored);
+        
+        if (!stored.username || !stored.displayName) {
+          setShowSetupWizard(true);
+        }
+      } else {
+        setIsAuthenticated(true);
+        const stored = await loadProfile();
+        setProfile(stored);
+      }
+      setReady(true);
+    };
+
+    checkAuth();
   }, [router]);
 
   useEffect(() => {
-    if (!ready) return;
-    saveProfile(profile);
-  }, [profile, ready]);
+    if (!ready || !isAuthenticated) return;
+    
+    const saveTimeout = setTimeout(() => {
+      saveProfile(profile);
+    }, 500);
+    
+    return () => clearTimeout(saveTimeout);
+  }, [profile, ready, isAuthenticated]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -150,7 +325,10 @@ export function StudioShell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileMenuOpen]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase && isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
     localStorage.removeItem("linknest_auth");
     router.push("/login");
   };
@@ -169,6 +347,7 @@ export function StudioShell() {
 
   const totalClicks = profile.links.reduce((sum, link) => sum + link.clicks, 0);
   const publicPath = `/${profile.username || "username"}`;
+  const ctr = profile.views > 0 ? Math.round((totalClicks / profile.views) * 100) : 0;
 
   const updateLink = (id: string, key: keyof LinkItem, value: string | number) => {
     setProfile((current) => ({
@@ -205,11 +384,17 @@ export function StudioShell() {
     { id: "settings" as NavSection, label: "Settings", icon: Settings }
   ];
 
-  const maxViews = Math.max(...mockAnalytics.views.map(v => v.value));
-  const maxClicks = Math.max(...mockAnalytics.clicks.map(v => v.value));
-
   return (
     <>
+      <SetupWizard
+        isOpen={showSetupWizard}
+        onClose={() => setShowSetupWizard(false)}
+        profile={profile}
+        setProfile={setProfile}
+        onSave={() => {
+          setProfile({ ...profile, published: profile.username && profile.displayName ? profile.published : false });
+        }}
+      />
       <div className="grain-overlay" />
       <div className="flex min-h-screen bg-[hsl(30_15%_97%)]">
         <aside
@@ -312,17 +497,6 @@ export function StudioShell() {
                     <ExternalLink className="h-4 w-4 text-[hsl(25_10%_45%)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                 </Link>
-                <button
-                  onClick={handleCopyLink}
-                  className="rounded-xl border border-[hsl(25_10%_45%/0.1)] bg-white p-2 text-[hsl(25_10%_45%)] transition-all hover:border-[hsl(24_85%_50%/0.3)] hover:shadow-sm sm:hidden"
-                  title="Copy link"
-                >
-                  {copied ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
                 <Button
                   size="sm"
                   variant={profile.published ? "outline" : "default"}
@@ -354,10 +528,7 @@ export function StudioShell() {
                         <Eye className="h-5 w-5 text-[hsl(24_85%_42%)]" />
                       </div>
                       <div className="mb-1 font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">{profile.views}</div>
-                      <div className="flex items-center gap-1 text-xs text-[hsl(150_60%_40%)]">
-                        <TrendingUp className="h-3 w-3" />
-                        <span>+12% from last week</span>
-                      </div>
+                      <div className="text-xs text-[hsl(25_10%_45%)]">Total Views</div>
                     </div>
                   </Card>
 
@@ -365,13 +536,10 @@ export function StudioShell() {
                     <div className="absolute right-4 top-4 h-16 w-16 rounded-full bg-[hsl(24_85%_50%/0.08)] transition-transform duration-500 group-hover:scale-125" />
                     <div className="relative">
                       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(24_85%_50%/0.1)]">
-                        <MousePointerClick className="h-5 w-5 text-[hsl(24_85%_42%)]" />
+                        <ExternalLink className="h-5 w-5 text-[hsl(24_85%_42%)]" />
                       </div>
                       <div className="mb-1 font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">{totalClicks}</div>
-                      <div className="flex items-center gap-1 text-xs text-[hsl(150_60%_40%)]">
-                        <TrendingUp className="h-3 w-3" />
-                        <span>+8% from last week</span>
-                      </div>
+                      <div className="text-xs text-[hsl(25_10%_45%)]">Total Clicks</div>
                     </div>
                   </Card>
 
@@ -379,10 +547,10 @@ export function StudioShell() {
                     <div className="absolute right-4 top-4 h-16 w-16 rounded-full bg-[hsl(24_85%_50%/0.08)] transition-transform duration-500 group-hover:scale-125" />
                     <div className="relative">
                       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(24_85%_50%/0.1)]">
-                        <Users className="h-5 w-5 text-[hsl(24_85%_42%)]" />
+                        <Layers className="h-5 w-5 text-[hsl(24_85%_42%)]" />
                       </div>
                       <div className="mb-1 font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">{profile.links.length}</div>
-                      <div className="text-xs text-[hsl(25_10%_45%)]">Active links</div>
+                      <div className="text-xs text-[hsl(25_10%_45%)]">Active Links</div>
                     </div>
                   </Card>
 
@@ -390,166 +558,62 @@ export function StudioShell() {
                     <div className="absolute right-4 top-4 h-16 w-16 rounded-full bg-[hsl(24_85%_50%/0.08)] transition-transform duration-500 group-hover:scale-125" />
                     <div className="relative">
                       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(24_85%_50%/0.1)]">
-                        <Clock className="h-5 w-5 text-[hsl(24_85%_42%)]" />
+                        <BarChart3 className="h-5 w-5 text-[hsl(24_85%_42%)]" />
                       </div>
-                      <div className="mb-1 font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">
-                        {Math.round(totalClicks / Math.max(profile.views, 1) * 100)}%
-                      </div>
-                      <div className="text-xs text-[hsl(25_10%_45%)]">Click rate</div>
+                      <div className="mb-1 font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">{ctr}%</div>
+                      <div className="text-xs text-[hsl(25_10%_45%)]">Click Rate</div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm">
-                  <div className="border-b border-[hsl(25_10%_45%/0.06)] px-6 py-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="font-serif text-xl font-medium text-[hsl(25_25%_10%)]">Visitor Activity</h2>
-                        <p className="mt-1 text-sm text-[hsl(25_10%_45%)]">Page views over the last 7 days</p>
-                      </div>
-                      <div className="flex items-center gap-1 rounded-xl border border-[hsl(25_10%_45%/0.1)] p-1">
-                        {(["7d", "30d", "90d"] as TimeRange[]).map((range) => (
-                          <button
-                            key={range}
-                            onClick={() => setTimeRange(range)}
-                            className={cn(
-                              "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                              timeRange === range
-                                ? "bg-[hsl(24_85%_50%)] text-white"
-                                : "text-[hsl(25_10%_45%)] hover:bg-[hsl(25_10%_45%/0.05)]"
-                            )}
-                          >
-                            {range}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex h-64 items-end justify-between gap-4">
-                      {mockAnalytics.views.map((item, index) => (
-                        <div key={item.date} className="flex flex-1 flex-col items-center gap-3">
-                          <div className="relative h-full w-full">
-                            <div
-                              className="absolute inset-x-0 bottom-0 rounded-t-lg bg-gradient-to-t from-[hsl(24_85%_50%/0.2)] to-[hsl(24_85%_50%)] transition-all duration-500 hover:from-[hsl(24_85%_50%/0.3)]"
-                              style={{ height: `${(item.value / maxViews) * 100}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-[hsl(25_10%_45%)]">{item.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-
-                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+                {profile.links.length > 0 && (
                   <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm">
                     <div className="border-b border-[hsl(25_10%_45%/0.06)] px-6 py-5">
                       <h2 className="font-serif text-xl font-medium text-[hsl(25_25%_10%)]">Link Performance</h2>
                       <p className="mt-1 text-sm text-[hsl(25_10%_45%)]">Clicks per link</p>
                     </div>
                     <div className="space-y-5 p-6">
-                      {mockAnalytics.clicks.map((item, index) => (
-                        <div key={item.label} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium text-[hsl(25_25%_10%)]">{item.label}</span>
-                            <span className="text-[hsl(25_10%_45%)]">{item.value} clicks</span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-[hsl(25_10%_45%/0.08)]">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-[hsl(24_85%_50%)] to-[hsl(24_85%_60%)] transition-all duration-500"
-                              style={{ width: `${item.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-
-                  <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm">
-                    <div className="border-b border-[hsl(25_10%_45%/0.06)] px-6 py-5">
-                      <h2 className="font-serif text-xl font-medium text-[hsl(25_25%_10%)]">Traffic Sources</h2>
-                      <p className="mt-1 text-sm text-[hsl(25_10%_45%)]">Where your visitors come from</p>
-                    </div>
-                    <div className="space-y-4 p-6">
-                      {mockAnalytics.referrers.map((item) => (
-                        <div key={item.label} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(25_10%_45%/0.06)]">
-                              <span className="text-sm">{item.label === "Instagram" ? "📷" : item.label === "Twitter/X" ? "𝕏" : item.label === "TikTok" ? "🎵" : "🔗"}</span>
+                      {profile.links.map((item) => {
+                        const maxClicks = Math.max(...profile.links.map(l => l.clicks), 1);
+                        const pct = Math.round((item.clicks / maxClicks) * 100);
+                        return (
+                          <div key={item.id} className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium text-[hsl(25_25%_10%)]">{item.title || "Untitled"}</span>
+                              <span className="text-[hsl(25_10%_45%)]">{item.clicks} clicks</span>
                             </div>
-                            <span className="text-sm font-medium text-[hsl(25_25%_10%)]">{item.label}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="h-2 w-24 overflow-hidden rounded-full bg-[hsl(25_10%_45%/0.08)]">
+                            <div className="h-2 overflow-hidden rounded-full bg-[hsl(25_10%_45%/0.08)]">
                               <div
-                                className="h-full rounded-full bg-[hsl(24_85%_50%)]"
-                                style={{ width: `${item.value}%` }}
+                                className="h-full rounded-full bg-gradient-to-r from-[hsl(24_85%_50%)] to-[hsl(24_85%_60%)]"
+                                style={{ width: `${pct}%` }}
                               />
                             </div>
-                            <span className="w-10 text-right text-sm text-[hsl(25_10%_45%)]">{item.value}%</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </Card>
-                </div>
+                )}
 
-                <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-                  <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm">
-                    <div className="border-b border-[hsl(25_10%_45%/0.06)] px-6 py-5">
-                      <h2 className="font-serif text-xl font-medium text-[hsl(25_25%_10%)]">Devices</h2>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {mockAnalytics.devices.map((item) => (
-                          <div key={item.label} className="flex items-center gap-4">
-                            <div className="flex-1">
-                              <div className="mb-1 flex items-center justify-between text-sm">
-                                <span className="text-[hsl(25_25%_10%)]">{item.label}</span>
-                                <span className="font-medium text-[hsl(25_25%_10%)]">{item.value}%</span>
-                              </div>
-                              <div className="h-2 overflow-hidden rounded-full bg-[hsl(25_10%_45%/0.08)]">
-                                <div
-                                  className="h-full rounded-full bg-[hsl(24_85%_50%)]"
-                                  style={{ width: `${item.value}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                {!profile.published && (
+                  <Card className="overflow-hidden rounded-2xl border-2 border-dashed border-[hsl(24_85%_50%/0.3)] bg-[hsl(24_85%_50%/0.02)] p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(24_85%_50%/0.1)]">
+                        <ExternalLink className="h-6 w-6 text-[hsl(24_85%_42%)]" />
                       </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-[hsl(25_25%_10%)]">Your page is not published</h3>
+                        <p className="text-sm text-[hsl(25_10%_45%)]">Publish your page to start getting views and track analytics</p>
+                      </div>
+                      <Button
+                        onClick={() => setProfile({ ...profile, published: true })}
+                        className="rounded-xl bg-[hsl(24_85%_42%)]"
+                      >
+                        Publish Now
+                      </Button>
                     </div>
                   </Card>
-
-                  <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm lg:col-span-2">
-                    <div className="border-b border-[hsl(25_10%_45%/0.06)] px-6 py-5">
-                      <h2 className="font-serif text-xl font-medium text-[hsl(25_25%_10%)]">Top Countries</h2>
-                    </div>
-                    <div className="divide-y divide-[hsl(25_10%_45%/0.06)]">
-                      {mockAnalytics.topCountries.map((item, index) => (
-                        <div key={item.label} className="flex items-center justify-between px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(25_10%_45%/0.06)] text-sm">
-                              {index + 1}
-                            </span>
-                            <span className="text-xl">{item.flag}</span>
-                            <span className="text-sm font-medium text-[hsl(25_25%_10%)]">{item.label}</span>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="h-2 w-24 overflow-hidden rounded-full bg-[hsl(25_10%_45%/0.08)]">
-                              <div
-                                className="h-full rounded-full bg-[hsl(24_85%_50%)]"
-                                style={{ width: `${item.value * 2}%` }}
-                              />
-                            </div>
-                            <span className="w-8 text-right text-sm font-medium text-[hsl(25_25%_10%)]">{item.value}%</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                </div>
+                )}
               </div>
             )}
 
@@ -598,16 +662,8 @@ export function StudioShell() {
                               />
                             </div>
                             <div className="flex flex-col gap-2 rounded-xl bg-[hsl(25_10%_45%/0.03)] px-3 sm:px-4 py-2 sm:py-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="flex items-center gap-3 sm:gap-6">
-                                <div className="flex items-center gap-2">
-                                  <MousePointerClick className="h-4 w-4 text-[hsl(24_85%_42%)]" />
-                                  <span className="text-sm font-medium text-[hsl(25_25%_10%)]">{link.clicks}</span>
-                                  <span className="hidden text-xs text-[hsl(25_10%_45%)] sm:inline">clicks</span>
-                                </div>
-                                <div className="hidden h-4 w-px bg-[hsl(25_10%_45%/0.1)] sm:block" />
-                                <span className="text-xs text-[hsl(25_10%_45%)]">
-                                  {link.url ? new URL(link.url).hostname : "No URL"}
-                                </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-[hsl(25_10%_45%)]">{link.clicks} clicks</span>
                               </div>
                               <div className="flex items-center gap-1 sm:gap-2 sm:opacity-100">
                                 <Button
@@ -619,9 +675,10 @@ export function StudioShell() {
                                       links: swapLinks(current.links, index, -1)
                                     }))
                                   }
-                                  className="h-8 w-8 p-0"
+                                  disabled={index === 0}
+                                  className="h-8 w-8 p-0 disabled:opacity-30"
                                 >
-                                  <MoveUp className="h-4 w-4" />
+                                  <span className="text-lg">↑</span>
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -632,18 +689,10 @@ export function StudioShell() {
                                       links: swapLinks(current.links, index, 1)
                                     }))
                                   }
-                                  className="h-8 w-8 p-0"
+                                  disabled={index === profile.links.length - 1}
+                                  className="h-8 w-8 p-0 disabled:opacity-30"
                                 >
-                                  <MoveDown className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => updateLink(link.id, "clicks", link.clicks + 1)}
-                                  className="h-8 gap-1.5 px-2 text-[hsl(24_85%_42%)]"
-                                >
-                                  <ArrowUp className="h-3.5 w-3.5" />
-                                  <span className="text-xs">Simulate</span>
+                                  <span className="text-lg">↓</span>
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -651,7 +700,7 @@ export function StudioShell() {
                                   onClick={() => removeLink(link.id)}
                                   className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <span className="text-lg">×</span>
                                 </Button>
                               </div>
                             </div>
@@ -659,6 +708,27 @@ export function StudioShell() {
                         </div>
                       </div>
                     ))}
+                    {profile.links.length === 0 && (
+                      <div className="p-12 text-center">
+                        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[hsl(25_10%_45%/0.1)]">
+                          <Link2 className="h-8 w-8 text-[hsl(25_10%_45%)]" />
+                        </div>
+                        <h3 className="mb-2 font-medium text-[hsl(25_25%_10%)]">No links yet</h3>
+                        <p className="mb-4 text-sm text-[hsl(25_10%_45%)]">Add your first link to start sharing</p>
+                        <Button
+                          onClick={() =>
+                            setProfile((current) => ({
+                              ...current,
+                              links: [...current.links, createBlankLink()]
+                            }))
+                          }
+                          className="rounded-xl bg-[hsl(24_85%_42%)]"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Link
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </Card>
               </div>
@@ -694,7 +764,7 @@ export function StudioShell() {
                             className="mb-3 flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold"
                             style={{ backgroundColor: preset.accent, color: preset.card }}
                           >
-                            AC
+                            LN
                           </div>
                           <div className="h-3 w-20 rounded" style={{ backgroundColor: preset.muted }} />
                           <div className="mt-2 h-2 w-16 rounded" style={{ backgroundColor: preset.muted, opacity: 0.5 }} />

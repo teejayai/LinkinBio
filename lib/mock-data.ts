@@ -1,4 +1,4 @@
-import { LinkProfile, ThemePreset } from "@/lib/types";
+import { ThemePreset } from "@/lib/types";
 
 export const themePresets: ThemePreset[] = [
   {
@@ -62,33 +62,3 @@ export const themePresets: ThemePreset[] = [
     font: "serif"
   }
 ];
-
-export const defaultProfile: LinkProfile = {
-  username: "adeola",
-  displayName: "Adeola Creates",
-  bio: "Designer, educator, and storyteller sharing tools, workshops, and new drops.",
-  avatar: "AC",
-  themeId: "editorial",
-  views: 248,
-  published: true,
-  links: [
-    {
-      id: "link-1",
-      title: "Book a Brand Session",
-      url: "https://example.com/book",
-      clicks: 86
-    },
-    {
-      id: "link-2",
-      title: "Watch My Latest Tutorial",
-      url: "https://example.com/tutorial",
-      clicks: 139
-    },
-    {
-      id: "link-3",
-      title: "Join My Weekly Newsletter",
-      url: "https://example.com/newsletter",
-      clicks: 57
-    }
-  ]
-};

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,16 +14,44 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      localStorage.setItem("linknest_auth", "true");
-      router.push("/studio");
-    }, 800);
+    if (!isSupabaseConfigured || !supabase) {
+      setError("Supabase is not configured. Please set up your Supabase project.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+        router.push("/studio");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        router.push("/studio");
+      }
+    } catch (err: any) {
+      setError(err.message || "Authentication failed. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = () => {
+    localStorage.setItem("linknest_auth", "true");
+    router.push("/studio");
   };
 
   return (
@@ -38,12 +67,16 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(24_85%_42%)] shadow-lg shadow-[hsl(24_85%_50%/0.2)]">
             <span className="font-serif text-2xl font-medium italic text-[hsl(30_15%_97%)]">L</span>
           </div>
-          <h1 className="font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">Welcome back</h1>
-          <p className="mt-2 text-sm text-[hsl(25_10%_45%)]">Sign in to your LinkNest studio</p>
+          <h1 className="font-serif text-3xl font-medium text-[hsl(25_25%_10%)]">
+            {isSignUp ? "Create account" : "Welcome back"}
+          </h1>
+          <p className="mt-2 text-sm text-[hsl(25_10%_45%)]">
+            {isSignUp ? "Sign up to start creating your page" : "Sign in to your LinkNest studio"}
+          </p>
         </div>
 
         <div className="rounded-3xl bg-white p-8 shadow-xl shadow-[hsl(25_10%_10%/0.08)]">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleAuth} className="space-y-5">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-[hsl(25_25%_10%)]">
                 Email
@@ -72,6 +105,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="rounded-xl pr-10"
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -102,23 +136,44 @@ export default function LoginPage() {
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  <span>Sign in</span>
+                  <span>{isSignUp ? "Create account" : "Sign in"}</span>
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[hsl(25_10%_45%)]">
-            <span>Any email and password will work for demo</span>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-[hsl(24_85%_42%)] hover:underline"
+            >
+              {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+            </button>
           </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[hsl(25_10%_45%/0.1)]" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-[hsl(25_10%_45%)]">or</span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleDemoLogin}
+            variant="outline"
+            className="w-full rounded-xl border-2"
+          >
+            Try Demo Mode
+          </Button>
         </div>
 
         <p className="mt-6 text-center text-xs text-[hsl(25_10%_45%)]">
-          New to LinkNest?{" "}
-          <a href="/studio" className="font-medium text-[hsl(24_85%_42%)] hover:underline">
-            Start creating
-          </a>
+          By signing up, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>
     </div>

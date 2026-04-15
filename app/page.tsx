@@ -89,15 +89,15 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 animate-fade-in-up stagger-3">
-                <Link href="/studio">
+                <Link href="/login">
                   <Button size="lg" className="group overflow-hidden rounded-full bg-[hsl(24_85%_42%)] px-8 py-6 text-base hover:bg-[hsl(24_85%_35%)] hover:shadow-lg hover:shadow-[hsl(24_85%_50%/0.2)] transition-all duration-300">
-                    <span className="relative z-10">Start editing</span>
+                    <span className="relative z-10">Get started</span>
                     <ArrowRight className="ml-3 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link href="/adeola">
+                <Link href="/login">
                   <Button size="lg" variant="outline" className="rounded-full border-2 px-8 py-6 text-base transition-all duration-300 hover:border-[hsl(24_85%_50%/0.4)] hover:bg-[hsl(24_85%_50%/0.05)]">
-                    View demo
+                    Sign in
                   </Button>
                 </Link>
               </div>
@@ -105,45 +105,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="relative px-4 sm:px-8 pb-16 sm:pb-24">
+<section className="relative px-4 sm:px-8 pb-16 sm:pb-24">
           <div className="mx-auto max-w-5xl">
             <div className="relative animate-fade-in-up stagger-4">
               <div className="relative overflow-hidden rounded-3xl bg-white p-4 shadow-2xl shadow-[hsl(25_10%_10%/0.1)]">
                 <div className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl bg-[hsl(30_15%_97%)] sm:flex-row">
-                  <div className="border-b border-[hsl(25_10%_45%/0.08)] bg-white/80 p-3 sm:hidden">
-                    <div className="mb-2 flex items-center justify-between">
-                      <button
-                        type="button"
-                        aria-label="Open dashboard navigation"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[hsl(25_10%_45%/0.15)] bg-white text-[hsl(25_25%_10%)]"
-                      >
-                        <Menu className="h-4 w-4" />
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[hsl(24_85%_42%)] text-[hsl(30_15%_97%)]">
-                          <span className="font-serif text-xs font-medium italic">L</span>
-                        </div>
-                        <span className="font-serif text-sm">LinkNest</span>
-                      </div>
-                      <div className="rounded-md bg-[hsl(24_85%_42%)] px-2.5 py-1 text-[10px] font-medium text-[hsl(30_15%_97%)]">
-                        Publish
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px]">
-                      {["Dashboard", "Links", "Theme", "Profile", "Settings"].map((item, idx) => (
-                        <span
-                          key={item}
-                          className={`whitespace-nowrap rounded-full px-2.5 py-1 ${
-                            idx === 0
-                              ? "bg-[hsl(24_85%_50%/0.12)] text-[hsl(24_85%_42%)]"
-                              : "bg-white text-[hsl(25_10%_45%)]"
-                          }`}
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                   <aside className="hidden w-[180px] flex-shrink-0 border-r border-[hsl(25_10%_45%/0.06)] p-3 sm:block">
                     <div className="mb-6 flex items-center gap-2 px-2">
                       <div className="h-8 w-8 rounded-lg bg-[hsl(24_85%_42%)] flex items-center justify-center">
@@ -174,36 +140,31 @@ export default function HomePage() {
                     </div>
                   </aside>
 
-                  <main className="flex-1 p-4 sm:p-6">
-                    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <h3 className="font-serif text-lg font-medium sm:text-xl">Dashboard</h3>
+                  <main className="flex-1 p-6">
+                    <div className="mb-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-serif text-lg sm:text-xl">Dashboard</h3>
                         <span className="flex items-center gap-1.5 rounded-full bg-[hsl(150_60%_45%/0.12)] px-2.5 py-1">
                           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[hsl(150_60%_40%)]" />
                           <span className="text-[10px] font-medium text-[hsl(150_60%_35%)]">Live</span>
                         </span>
                       </div>
-                      <div className="hidden flex-wrap items-center gap-2 sm:flex">
-                        <Link
-                          href="/adeola"
-                          className="group inline-flex items-center gap-2 rounded-lg border border-[hsl(25_10%_45%/0.1)] bg-white px-2.5 py-1.5 transition-all duration-200 hover:border-[hsl(24_85%_50%/0.3)] hover:shadow-sm"
-                          aria-label="Open /adeola public profile"
-                        >
-                          <span className="text-[10px] font-medium text-[hsl(25_10%_45%)] group-hover:text-[hsl(24_85%_35%)]">/adeola</span>
-                          <ExternalLink className="h-3 w-3 text-[hsl(25_10%_45%)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        </Link>
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg border border-[hsl(25_10%_45%/0.1)] bg-white px-2.5 py-1.5">
+                          <span className="text-[10px] text-[hsl(25_10%_45%)]">/yourname</span>
+                        </div>
                         <div className="rounded-lg bg-[hsl(24_85%_42%)] px-3 py-1.5 text-[10px] font-medium text-[hsl(30_15%_97%)]">
                           Publish
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                       {[
-                        { label: "Total Views", value: "248", trend: "+12%", color: "text-[hsl(150_60%_40%)]" },
-                        { label: "Total Clicks", value: "282", trend: "+8%", color: "text-[hsl(150_60%_40%)]" },
-                        { label: "Top Link", value: "89", trend: "", color: "" },
-                        { label: "Avg. CTR", value: "4.2%", trend: "", color: "" }
+                        { label: "Total Views", value: "0", trend: "", color: "" },
+                        { label: "Total Clicks", value: "0", trend: "", color: "" },
+                        { label: "Top Link", value: "-", trend: "", color: "" },
+                        { label: "Avg. CTR", value: "0%", trend: "", color: "" }
                       ].map((stat, i) => (
                         <div key={i} className="rounded-xl bg-white p-4 shadow-sm">
                           <div className="mb-1 text-[10px] uppercase tracking-wider text-[hsl(25_10%_45%)]">{stat.label}</div>
@@ -218,67 +179,32 @@ export default function HomePage() {
                         <h4 className="text-sm font-medium">Views (7 days)</h4>
                       </div>
                       <div className="flex items-end gap-1.5 h-20">
-                        {[40, 60, 50, 80, 100, 90, 130].map((h, i) => (
+                        {[0, 0, 0, 0, 0, 0, 0].map((h, i) => (
                           <div
                             key={i}
-                            className="flex-1 rounded-t-sm bg-[hsl(24_85%_50%/0.6)] transition-all duration-300 hover:bg-[hsl(24_85%_50%)]"
-                            style={{ height: `${(h / 130) * 100}%` }}
+                            className="flex-1 rounded-t-sm bg-[hsl(24_85%_50%/0.2)]"
+                            style={{ height: '10%' }}
                           />
                         ))}
                       </div>
                       <div className="mt-2 flex justify-between text-[9px] text-[hsl(25_10%_45%)]">
-                        <span>Apr 7</span>
-                        <span>Apr 13</span>
+                        <span>Day 1</span>
+                        <span>Day 7</span>
                       </div>
-                    </div>
-
-                    <div className="mb-4 sm:hidden">
-                      <Link
-                        href="/adeola"
-                        className="group inline-flex items-center gap-2 rounded-lg border border-[hsl(25_10%_45%/0.1)] bg-white px-3 py-2 text-[11px] transition-all duration-200 hover:border-[hsl(24_85%_50%/0.3)] hover:shadow-sm"
-                        aria-label="Open /adeola public profile"
-                      >
-                        <span className="font-medium text-[hsl(25_10%_45%)] group-hover:text-[hsl(24_85%_35%)]">Open public profile: /adeola</span>
-                        <ExternalLink className="h-3.5 w-3.5 text-[hsl(25_10%_45%)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      </Link>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="rounded-xl bg-white p-4 shadow-sm">
-                        <h4 className="mb-3 text-xs font-medium">Top Links</h4>
+                        <h4 className="mb-3 text-xs font-medium">Your Links</h4>
                         <div className="space-y-2">
-                          {[
-                            { label: "Watch My Latest Tutorial", clicks: 89, pct: 100 },
-                            { label: "Join My Newsletter", clicks: 57, pct: 64 },
-                            { label: "Book a Brand Session", clicks: 45, pct: 51 }
-                          ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <div className="flex-1 truncate text-[10px]">{item.label}</div>
-                              <div className="flex items-center gap-1.5">
-                                <div className="h-1.5 w-12 rounded-full bg-[hsl(24_85%_50%/0.2)]">
-                                  <div className="h-full rounded-full bg-[hsl(24_85%_50%)]" style={{ width: `${item.pct}%` }} />
-                                </div>
-                                <span className="text-[10px] font-medium">{item.clicks}</span>
-                              </div>
-                            </div>
-                          ))}
+                          <p className="text-[10px] text-[hsl(25_10%_45%)]">No links yet. Add your first link in the studio.</p>
                         </div>
                       </div>
 
                       <div className="rounded-xl bg-white p-4 shadow-sm">
-                        <h4 className="mb-3 text-xs font-medium">Top Referrers</h4>
+                        <h4 className="mb-3 text-xs font-medium">Traffic Sources</h4>
                         <div className="space-y-2">
-                          {[
-                            { label: "Instagram", value: 45 },
-                            { label: "Twitter/X", value: 28 },
-                            { label: "TikTok", value: 15 },
-                            { label: "Direct", value: 12 }
-                          ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <div className="flex-1 text-[10px]">{item.label}</div>
-                              <div className="text-[10px] font-medium">{item.value}%</div>
-                            </div>
-                          ))}
+                          <p className="text-[10px] text-[hsl(25_10%_45%)]">No traffic yet. Share your page to get started.</p>
                         </div>
                       </div>
                     </div>
@@ -286,34 +212,30 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link href="/studio">
-                <div className="absolute -bottom-4 -right-4 hidden animate-float cursor-pointer md:block">
-                  <div className="rounded-2xl border border-[hsl(24_85%_50%/0.2)] bg-white/90 backdrop-blur-sm px-5 py-3 shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-[hsl(24_85%_50%/0.4)]">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(24_85%_50%/0.15)]">
-                        <BarChart3 className="h-5 w-5 text-[hsl(24_85%_42%)]" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">Creator dashboard</div>
-                        <div className="text-xs text-[hsl(25_10%_45%)]">View analytics</div>
-                      </div>
+              <div className="absolute -bottom-4 -right-4 animate-float">
+                <div className="rounded-2xl border border-[hsl(24_85%_50%/0.2)] bg-white/90 backdrop-blur-sm px-5 py-3 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(24_85%_50%/0.15)]">
+                      <BarChart3 className="h-5 w-5 text-[hsl(24_85%_42%)]" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Analytics ready</div>
+                      <div className="text-xs text-[hsl(25_10%_45%)]">Track your growth</div>
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
 
-              <Link href="/adeola">
-                <div className="absolute -left-4 top-1/2 hidden -translate-y-1/2 animate-float cursor-pointer md:block" style={{ animationDelay: "1s" }}>
-                  <div className="rounded-2xl border border-[hsl(25_10%_45%/0.1)] bg-white/90 backdrop-blur-sm px-4 py-3 shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-[hsl(24_85%_50%/0.3)]">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(24_85%_50%/0.15)]">
-                        <Eye className="h-4 w-4 text-[hsl(24_85%_42%)]" />
-                      </div>
-                      <div className="text-xs font-medium">Public page</div>
+              <div className="absolute -left-4 top-1/2 -translate-y-1/2 animate-float" style={{ animationDelay: "1s" }}>
+                <div className="rounded-2xl border border-[hsl(25_10%_45%/0.1)] bg-white/90 backdrop-blur-sm px-4 py-3 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(24_85%_50%/0.15)]">
+                      <Sparkles className="h-4 w-4 text-[hsl(24_85%_42%)]" />
                     </div>
+                    <div className="text-xs font-medium">6 themes</div>
                   </div>
                 </div>
-              </Link>
+              </div>
             </div>
           </div>
         </section>

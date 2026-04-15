@@ -16,9 +16,12 @@ export type LinkItem = {
   title: string;
   url: string;
   clicks: number;
+  created_at?: string;
 };
 
 export type LinkProfile = {
+  id?: string;
+  user_id?: string;
   username: string;
   displayName: string;
   bio: string;
@@ -27,4 +30,6 @@ export type LinkProfile = {
   links: LinkItem[];
   views: number;
   published: boolean;
+  created_at?: string;
+  updated_at?: string;
 };

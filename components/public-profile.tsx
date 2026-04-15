@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { defaultProfile, themePresets } from "@/lib/mock-data";
-import { loadProfile, saveProfile } from "@/lib/storage";
+import { defaultProfile, themePresets, getPublicProfile } from "@/lib/supabase-storage";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { LinkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,19 +27,13 @@ export function PublicProfile({ username }: { username: string }) {
   const [linkHovers, setLinkHovers] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const stored = loadProfile();
-    const normalized = username.toLowerCase();
-
-    if (stored.username.toLowerCase() !== normalized || !stored.published) {
+    const loadPublicProfile = async () => {
+      const profile = await getPublicProfile(username);
+      setProfile(profile);
       setMounted(true);
-      setProfile(null);
-      return;
-    }
+    };
 
-    const withView = { ...stored, views: stored.views + 1 };
-    saveProfile(withView);
-    setProfile(withView);
-    setMounted(true);
+    loadPublicProfile();
   }, [username]);
 
   const theme = useMemo(() => {
@@ -163,17 +157,20 @@ export function PublicProfile({ username }: { username: string }) {
                       href={linkItem.url || "#"}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={() => {
-                        const nextProfile = {
-                          ...profile,
-                          links: profile.links.map((current) =>
-                            current.id === linkItem.id
-                              ? { ...current, clicks: current.clicks + 1 }
-                              : current
-                          )
-                        };
-                        setProfile(nextProfile);
-                        saveProfile(nextProfile);
+                      onClick={async () => {
+                        if (!linkItem.url) return;
+                        if (supabase && isSupabaseConfigured && profile.id) {
+                          const { data: linkData } = await supabase
+                            .from("links")
+                            .select("clicks")
+                            .eq("id", linkItem.id)
+                            .single();
+                          const newClicks = (linkData?.clicks || 0) + 1;
+                          await supabase
+                            .from("links")
+                            .update({ clicks: newClicks })
+                            .eq("id", linkItem.id);
+                        }
                       }}
                       onMouseEnter={() => setLinkHovers(prev => ({ ...prev, [linkItem.id]: true }))}
                       onMouseLeave={() => setLinkHovers(prev => ({ ...prev, [linkItem.id]: false }))}
