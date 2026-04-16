@@ -289,6 +289,7 @@ export function StudioShell() {
         setIsAuthenticated(true);
         const stored = await loadProfile(session.user.id);
         setProfile(stored);
+        setCurrentUserId(session.user.id);
         
         if (!stored.username || !stored.displayName) {
           setShowSetupWizard(true);
@@ -297,6 +298,7 @@ export function StudioShell() {
         setIsAuthenticated(true);
         const stored = await loadProfile();
         setProfile(stored);
+        setCurrentUserId("demo");
       }
       setReady(true);
     };
@@ -313,6 +315,26 @@ export function StudioShell() {
     
     return () => clearTimeout(saveTimeout);
   }, [profile, ready, isAuthenticated]);
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!ready || !currentUserId) return;
+
+    const pollInterval = setInterval(async () => {
+      const fresh = await loadProfile(currentUserId);
+      setProfile(prev => ({
+        ...prev,
+        links: prev.links.map(link => {
+          const freshLink = fresh.links.find(f => f.id === link.id);
+          return freshLink ? { ...link, clicks: freshLink.clicks } : link;
+        }),
+        views: fresh.views,
+      }));
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [ready, currentUserId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
