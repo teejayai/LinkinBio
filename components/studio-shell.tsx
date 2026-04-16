@@ -319,21 +319,33 @@ export function StudioShell() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!ready || !currentUserId) return;
+    if (!ready || !currentUserId || !isSupabaseConfigured || !supabase) return;
+    if (currentUserId === "demo") return;
 
-    const pollInterval = setInterval(async () => {
-      const fresh = await loadProfile(currentUserId);
-      setProfile(prev => ({
-        ...prev,
-        links: prev.links.map(link => {
-          const freshLink = fresh.links.find(f => f.id === link.id);
-          return freshLink ? { ...link, clicks: freshLink.clicks } : link;
-        }),
-        views: fresh.views,
-      }));
-    }, 5000);
+    const channel = supabase
+      .channel('profile-updates')
+      .on(
+        'postgres_changes' as any,
+        { event: 'UPDATE', schema: 'public', table: 'links' },
+        (payload: { new: { id: string; clicks: number; profile_id: string }; old: { id: string } }) => {
+          setProfile(prev => {
+            if (prev.id && payload.new.profile_id !== prev.id) return prev;
+            return {
+              ...prev,
+              links: prev.links.map(link =>
+                link.id === payload.new.id
+                  ? { ...link, clicks: payload.new.clicks }
+                  : link
+              )
+            };
+          });
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(pollInterval);
+    return () => {
+      supabase!.removeChannel(channel);
+    };
   }, [ready, currentUserId]);
 
   useEffect(() => {
