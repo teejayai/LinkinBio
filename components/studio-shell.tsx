@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { defaultProfile, themePresets, loadProfile, saveProfile } from "@/lib/supabase-storage";
+import { defaultProfile, themePresets, loadProfile, saveProfile, checkUsernameAvailable } from "@/lib/supabase-storage";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { LinkItem, LinkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -260,6 +260,8 @@ export function StudioShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -324,6 +326,23 @@ export function StudioShell() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!profile.username || !isSupabaseConfigured) {
+      setUsernameError(null);
+      return;
+    }
+
+    const checkUsername = async () => {
+      setCheckingUsername(true);
+      const available = await checkUsernameAvailable(profile.username, profile.user_id);
+      setUsernameError(available ? null : "This username is already taken");
+      setCheckingUsername(false);
+    };
+
+    const timer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(timer);
+  }, [profile.username, profile.user_id]);
 
   const handleLogout = async () => {
     if (supabase && isSupabaseConfigured) {
@@ -874,9 +893,20 @@ export function StudioShell() {
                                 username: event.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "")
                               }))
                             }
-                            className="rounded-xl pl-8"
+                            className={cn(
+                              "rounded-xl pl-8",
+                              usernameError && "border-red-300 focus:border-red-400"
+                            )}
                           />
+                          {checkingUsername && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[hsl(25_10%_45%)]">
+                              Checking...
+                            </span>
+                          )}
                         </div>
+                        {usernameError && (
+                          <p className="text-xs text-red-500">{usernameError}</p>
+                        )}
                       </div>
                     </div>
 

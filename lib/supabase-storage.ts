@@ -15,6 +15,16 @@ const defaultProfile: LinkProfile = {
   links: []
 };
 
+function mapLinkRow(link: Partial<LinkItem> & { id?: string | null; title?: string | null; url?: string | null; clicks?: number | null; created_at?: string | null; }): LinkItem {
+  return {
+    id: link.id ?? crypto.randomUUID(),
+    title: link.title ?? "",
+    url: link.url ?? "",
+    clicks: link.clicks ?? 0,
+    created_at: link.created_at ?? undefined,
+  };
+}
+
 export async function loadProfile(userId?: string): Promise<LinkProfile> {
   if (!isSupabaseConfigured || !supabase || !userId) {
     return loadDemoProfile();
@@ -50,7 +60,7 @@ export async function loadProfile(userId?: string): Promise<LinkProfile> {
       bio: profile.bio,
       avatar: profile.avatar,
       themeId: profile.theme_id,
-      links: links || [],
+      links: (links || []).map(mapLinkRow),
       views: profile.views,
       published: profile.published,
       created_at: profile.created_at,
@@ -167,42 +177,55 @@ export async function saveProfile(profile: LinkProfile): Promise<void> {
 
     console.log("Profile updated successfully:", updateData);
 
+    const persistedProfile = updateData?.[0];
+    const profileId = profile.id ?? persistedProfile?.id;
+
+    if (!profileId) {
+      throw new Error("Unable to resolve profile ID for link persistence");
+    }
+
     const { data: existingLinks } = await supabase
       .from("links")
       .select("id")
-      .eq("profile_id", profile.id);
+      .eq("profile_id", profileId);
 
     const existingIds = new Set(existingLinks?.map((l) => l.id) || []);
-    const newIds = new Set(profile.links.map((l) => l.id));
+    const sanitizedLinks = profile.links.map((link) => mapLinkRow(link));
+    const newIds = new Set(sanitizedLinks.map((link) => link.id));
 
     const toDelete = [...existingIds].filter((id) => !newIds.has(id));
     if (toDelete.length > 0) {
-      for (const id of toDelete) {
-        await supabase.from("links").delete().eq("id", id);
+      const { error: deleteError } = await supabase
+        .from("links")
+        .delete()
+        .in("id", toDelete);
+
+      if (deleteError) {
+        console.error("Error deleting removed links:", deleteError);
+        throw deleteError;
       }
     }
 
-    for (let i = 0; i < profile.links.length; i++) {
-      const link = profile.links[i];
-      if (existingIds.has(link.id)) {
-        await supabase
-          .from("links")
-          .update({
-            title: link.title,
-            url: link.url,
-            clicks: link.clicks,
-            position: i,
-          })
-          .eq("id", link.id);
-      } else {
-        await supabase.from("links").insert({
-          profile_id: profile.id,
-          title: link.title,
-          url: link.url,
-          clicks: link.clicks,
-          position: i,
-        });
-      }
+    if (sanitizedLinks.length === 0) {
+      return;
+    }
+
+    const linkRows = sanitizedLinks.map((link, index) => ({
+      id: link.id,
+      profile_id: profileId,
+      title: link.title,
+      url: link.url,
+      clicks: link.clicks,
+      position: index,
+    }));
+
+    const { error: upsertError } = await supabase
+      .from("links")
+      .upsert(linkRows, { onConflict: "id" });
+
+    if (upsertError) {
+      console.error("Error upserting links:", upsertError);
+      throw upsertError;
     }
   } catch (err) {
     console.error("Error saving profile:", err);
@@ -224,10 +247,12 @@ export async function getPublicProfile(username: string): Promise<LinkProfile | 
 
     if (error) {
       console.error("Error fetching public profile:", error);
-      return null;
+      return getDemoPublicProfile(username);
     }
 
-    if (!profile) return null;
+    if (!profile) {
+      return getDemoPublicProfile(username);
+    }
 
     const { data: links } = await supabase
       .from("links")
@@ -248,13 +273,13 @@ export async function getPublicProfile(username: string): Promise<LinkProfile | 
       bio: profile.bio,
       avatar: profile.avatar,
       themeId: profile.theme_id,
-      links: links || [],
+      links: (links || []).map(mapLinkRow),
       views: profile.views + 1,
       published: profile.published,
     };
   } catch (err) {
     console.error("Error loading public profile:", err);
-    return null;
+    return getDemoPublicProfile(username);
   }
 }
 
@@ -288,6 +313,32 @@ function getDemoPublicProfile(username: string): LinkProfile | null {
     return profile;
   }
   return null;
+}
+
+export async function checkUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase || !username.trim()) {
+    return true;
+  }
+
+  try {
+    let query = supabase
+      .from("profiles")
+      .select("user_id")
+      .ilike("username", username.trim())
+      .maybeSingle();
+
+    if (excludeUserId) {
+      const { data: existing } = await query;
+      if (existing && existing.user_id !== excludeUserId) {
+        return false;
+      }
+    }
+
+    const { data: existing } = await query;
+    return !existing || existing.user_id === excludeUserId;
+  } catch {
+    return true;
+  }
 }
 
 export { defaultProfile, themePresets };
