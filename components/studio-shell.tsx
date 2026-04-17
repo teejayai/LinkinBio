@@ -319,24 +319,39 @@ export function StudioShell() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!ready || !currentUserId || !isSupabaseConfigured || !supabase) return;
+    if (!ready || !currentUserId || !profile.id || !isSupabaseConfigured || !supabase) return;
     if (currentUserId === "demo") return;
 
-    const channel = supabase
-      .channel('profile-updates')
+    const client = supabase;
+
+    const channel = client
+      .channel(`profile-updates:${profile.id}`)
       .on(
-        'postgres_changes' as any,
-        { event: 'UPDATE', schema: 'public', table: 'links' },
-        (payload: { new: { id: string; clicks: number; profile_id: string }; old: { id: string } }) => {
-          setProfile(prev => {
-            if (prev.id && payload.new.profile_id !== prev.id) return prev;
+        "postgres_changes" as any,
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${profile.id}` },
+        (payload: { new: { id: string; views: number } }) => {
+          setProfile((prev) => {
+            if (prev.id !== payload.new.id) return prev;
             return {
               ...prev,
-              links: prev.links.map(link =>
+              views: payload.new.views,
+            };
+          });
+        }
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "UPDATE", schema: "public", table: "links", filter: `profile_id=eq.${profile.id}` },
+        (payload: { new: { id: string; clicks: number; profile_id: string } }) => {
+          setProfile((prev) => {
+            if (prev.id !== payload.new.profile_id) return prev;
+            return {
+              ...prev,
+              links: prev.links.map((link) =>
                 link.id === payload.new.id
                   ? { ...link, clicks: payload.new.clicks }
                   : link
-              )
+              ),
             };
           });
         }
@@ -344,9 +359,9 @@ export function StudioShell() {
       .subscribe();
 
     return () => {
-      supabase!.removeChannel(channel);
+      client.removeChannel(channel);
     };
-  }, [ready, currentUserId]);
+  }, [ready, currentUserId, profile.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
